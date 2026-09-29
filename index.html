@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Developer Leaderboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <h1>GitHub Dev <span>Leaderboard</span></h1>
+      </div>
+      <p class="subtitle">Fetch GitHub users, calculate developer impact scores, and view real-time rankings.</p>
+      <div class="formula-tag">
+        Ranking Formula: <code>(Stars × 2) + Followers + Public Repos</code>
+      </div>
+    </header>
+
+    <!-- Backend Status & Endpoint Configuration -->
+    <div class="config-bar">
+      <div class="server-status">
+        <span class="status-dot" id="serverStatusDot"></span>
+        <span id="serverStatusText">Connecting...</span>
+      </div>
+      <div class="server-url-wrapper">
+        <label for="apiUrlInput" style="color: var(--text-muted); font-size: 0.8rem;">Backend API:</label>
+        <input type="text" id="apiUrlInput" value="http://localhost:5000" title="Backend Server URL" />
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTotalUsers">0</div>
+          <div class="stat-label">Ranked Devs</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👑</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTopDev">-</div>
+          <div class="stat-label">Top Developer</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statTopScore">-</div>
+          <div class="stat-label">Highest Score</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Fetch User Form -->
+    <section class="add-user-card">
+      <h2 class="card-title">
+        <span>⚡</span> Rank a GitHub User
+      </h2>
+      <p class="card-subtitle">Enter any public GitHub username to fetch their repositories, calculate their rank, and add them to the leaderboard.</p>
+
+      <form id="userForm" class="fetch-form" autocomplete="off">
+        <div class="input-group">
+          <span class="input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </span>
+          <input
+            type="text"
+            id="usernameInput"
+            class="username-input"
+            placeholder="e.g. torvalds, gaearon, octocat"
+            required
+          />
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-primary">
+          <span id="submitBtnSpinner" class="spinner dark" style="display: none;"></span>
+          <span id="submitBtnText">Fetch & Rank</span>
+        </button>
+      </form>
+
+      <!-- Quick sample usernames -->
+      <div class="quick-picks">
+        <span>Try sample:</span>
+        <button type="button" class="quick-chip" onclick="setUsername('torvalds')">@torvalds</button>
+        <button type="button" class="quick-chip" onclick="setUsername('gaearon')">@gaearon</button>
+        <button type="button" class="quick-chip" onclick="setUsername('yyx990803')">@yyx990803</button>
+        <button type="button" class="quick-chip" onclick="setUsername('sindresorhus')">@sindresorhus</button>
+        <button type="button" class="quick-chip" onclick="setUsername('octocat')">@octocat</button>
+      </div>
+
+      <div id="alertBox" class="alert"></div>
+    </section>
+
+    <!-- Leaderboard Section -->
+    <section class="leaderboard-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span>🏆</span> Global Rankings
+        </h2>
+        <div class="section-controls">
+          <input
+            type="text"
+            id="searchFilter"
+            class="search-filter"
+            placeholder="🔍 Filter ranked users..."
+          />
+          <button type="button" id="refreshBtn" class="btn btn-secondary" title="Refresh Leaderboard">
+            <span id="refreshIcon">🔄</span> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="leaderboard-table" id="tableContent" style="display: none;">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Rank</th>
+              <th>Developer</th>
+              <th>Stars</th>
+              <th>Followers</th>
+              <th>Repos</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+
+        <!-- State container (loader, empty, error) -->
+        <div id="stateMessage" class="state-container">
+          <div class="spinner" style="width: 28px; height: 28px; border-width: 3px; margin-bottom: 12px;"></div>
+          <p>Loading leaderboard...</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
